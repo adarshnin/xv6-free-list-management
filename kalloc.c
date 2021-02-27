@@ -78,21 +78,22 @@ kfree(char *v)
   if(kmem.use_lock)
     acquire(&kmem.lock);
 
-if(kmem.start == 0){
-  kmem.start = (struct node*)v;
-  kmem.start -> next = kmem.start -> prev = kmem.start;
-}  
-else{
-  r = (struct node*)v;
-  r->next = kmem.start;
-  r->prev = kmem.start->prev;
-  kmem.start->prev->next = r;
-  kmem.start->prev = r;
-  kmem.start = r;
-}
+  if(kmem.start == 0){
+    // If the Circular Doubly Linked list is empty
+    kmem.start = (struct node*)v;
+    kmem.start -> next = kmem.start -> prev = kmem.start;
+  }  
+  else{
+    r = (struct node*)v;
+    // Insert new node at the beginning of list
+    r->next = kmem.start;
+    r->prev = kmem.start->prev;
+    kmem.start->prev->next = r;
+    kmem.start->prev = r;
+    kmem.start = r;
+  }
   if(kmem.use_lock)
     release(&kmem.lock);
-
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -105,12 +106,13 @@ kalloc(void)
 
   if(kmem.use_lock)
     acquire(&kmem.lock);
+
   r = kmem.start;
-  // If linked list not empty
   if(r){
+    // If Circular Doubly Linked list is not empty
     struct node *last = kmem.start -> prev;
-    // If only one node left
     if (kmem.start == last){
+      // If only one node left
       kmem.start = 0;
     }
     else{
@@ -118,6 +120,7 @@ kalloc(void)
       r->prev->next = r->next;
       kmem.start = r->next;
     }
+    // Resetting the node's prev and next pointer
     r->next = 0;
     r->prev = 0;  
   }
